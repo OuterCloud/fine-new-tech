@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DailyPulse · 每日脉搏</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css"
+    />
+    <link rel="stylesheet" href="/static/style.css?v=18" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- Sidebar -->
+      <aside id="sidebar">
+        <div id="sidebar-header">
+          <h1>
+            <a href="#" onclick="event.preventDefault(); resetToWelcome();"
+              >DailyPulse</a
+            >
+          </h1>
+          <p class="subtitle">每日脉搏 / Daily Briefing</p>
+        </div>
+
+        <div id="generate-section">
+          <button id="generate-btn" onclick="generateReport()">
+            <span id="generate-btn-text">生成今日简报</span>
+          </button>
+          <button id="publish-btn" onclick="publishToGitHub()">
+            <span id="publish-btn-text">发布到 GitHub Pages</span>
+          </button>
+          <div id="progress" class="hidden">
+            <div id="progress-bar"><div id="progress-fill"></div></div>
+            <p id="progress-status"></p>
+          </div>
+        </div>
+
+        <div id="history-section">
+          <h2>每日脉搏报告 / Briefings</h2>
+          <ul id="report-list"></ul>
+        </div>
+
+        <div id="research-history-section">
+          <h2>调研报告 / Research</h2>
+          <ul id="research-list"></ul>
+        </div>
+
+        <div id="sidebar-footer">
+          <button id="settings-btn" onclick="showSettings()">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              />
+            </svg>
+            设置
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main content -->
+      <main id="main">
+        <div id="settings-page" class="hidden">
+          <div class="settings-container">
+            <h2 class="settings-title">⚙️ 设置</h2>
+            <div id="settings-form"></div>
+            <div class="settings-actions">
+              <button class="toolbar-btn" onclick="resetToWelcome()">
+                取消
+              </button>
+              <button id="settings-save-btn" onclick="saveSettings()">
+                保存
+              </button>
+            </div>
+            <p id="settings-msg" class="settings-msg"></p>
+          </div>
+        </div>
+
+        <div id="welcome" class="center-content">
+          <h2>DailyPulse · 每日脉搏</h2>
+          <p class="welcome-tagline">
+            聚合 GitHub Trending、Hacker News、arXiv、Product Hunt 与财经要闻<br />由
+            AI 生成中英双语简报
+          </p>
+          <div class="welcome-actions">
+            <div class="welcome-card" onclick="generateReport()">
+              <svg
+                class="welcome-card-svg"
+                viewBox="0 0 24 24"
+                width="32"
+                height="32"
+                fill="none"
+                stroke="#0969da"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="7" y1="8" x2="17" y2="8" />
+                <line x1="7" y1="12" x2="14" y2="12" />
+                <line x1="7" y1="16" x2="11" y2="16" />
+              </svg>
+              <span class="welcome-card-title">生成今日简报</span>
+              <span class="welcome-card-desc"
+                >抓取多源数据，AI 生成双语报告</span
+              >
+            </div>
+            <div
+              class="welcome-card"
+              onclick="document.getElementById('research-input').focus()"
+            >
+              <svg
+                class="welcome-card-svg"
+                viewBox="0 0 24 24"
+                width="32"
+                height="32"
+                fill="none"
+                stroke="#2da44e"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="10.5" cy="10.5" r="7" />
+                <line x1="16" y1="16" x2="21" y2="21" />
+                <line x1="7.5" y1="10.5" x2="13.5" y2="10.5" />
+                <line x1="10.5" y1="7.5" x2="10.5" y2="13.5" />
+              </svg>
+              <span class="welcome-card-title">深度调研</span>
+              <span class="welcome-card-desc"
+                >输入任意主题，获取结构化分析</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div id="research-section">
+          <div class="research-box">
+            <div class="research-header">
+              <div class="research-title">
+                <span class="research-icon">🔍</span>
+                <h3>深度调研</h3>
+              </div>
+              <p class="research-desc">
+                输入任意主题，AI 将为你生成一份结构化的深度研究报告
+              </p>
+            </div>
+            <div class="research-input-wrap">
+              <textarea
+                id="research-input"
+                placeholder="例如：WebAssembly 在边缘计算中的应用前景&#10;例如：2026 年大模型推理优化技术全景对比&#10;例如：Rust vs Go 在云原生场景下的选型分析"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="research-footer">
+              <span class="research-hint">⌘ + Enter 快捷发送</span>
+              <button id="research-btn" onclick="startResearch()">
+                <span id="research-btn-text">开始调研</span>
+              </button>
+            </div>
+            <div id="research-progress" class="hidden">
+              <div class="research-progress-bar">
+                <div id="research-progress-fill"></div>
+              </div>
+              <p id="research-progress-status"></p>
+            </div>
+          </div>
+        </div>
+
+        <article id="research-content" class="markdown-body hidden"></article>
+
+        <div id="report-toolbar" class="hidden">
+          <div class="toolbar-left">
+            <span id="toolbar-date"></span>
+            <a
+              id="toolbar-pages-link"
+              class="toolbar-pages-link hidden"
+              href="#"
+              target="_blank"
+              title="在 GitHub Pages 查看"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
+          <div class="toolbar-actions">
+            <div class="lang-switch" id="lang-switch">
+              <button
+                id="lang-zh-btn"
+                class="lang-btn active"
+                onclick="switchLang('zh')"
+              >
+                中文
+              </button>
+              <button
+                id="lang-en-btn"
+                class="lang-btn"
+                onclick="switchLang('en')"
+              >
+                EN
+              </button>
+            </div>
+            <button
+              class="toolbar-btn publish"
+              id="toolbar-publish-btn"
+              onclick="publishToGitHub()"
+            >
+              发布
+            </button>
+            <button
+              class="toolbar-btn"
+              id="regenerate-btn"
+              onclick="regenerateReport()"
+            >
+              重新生成
+            </button>
+            <button
+              class="toolbar-btn danger"
+              id="delete-btn"
+              onclick="handleToolbarDelete()"
+            >
+              删除
+            </button>
+          </div>
+        </div>
+
+        <article id="report-content" class="markdown-body hidden"></article>
+
+        <div id="refine-section" class="hidden">
+          <div class="refine-box">
+            <div class="refine-input-row">
+              <span class="refine-icon">💬</span>
+              <textarea
+                id="refine-input"
+                placeholder="对报告有疑问？输入修改意见，AI 将修订报告..."
+                rows="1"
+              ></textarea>
+              <button id="refine-btn" onclick="startRefine()">
+                <span id="refine-btn-text">修订</span>
+              </button>
+            </div>
+            <div id="refine-progress" class="hidden">
+              <div class="research-progress-bar">
+                <div id="refine-progress-fill"></div>
+              </div>
+              <p id="refine-progress-status"></p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/app.js?v=20"></script>
+  </body>
+</html>

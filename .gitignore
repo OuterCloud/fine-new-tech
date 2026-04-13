@@ -1,0 +1,44 @@
+# 环境变量（含密钥，禁止提交）
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+pip-wheel-metadata/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+ENV/
+
+# 运行时产物
+reports/
+logs/
+.service.pid
+
+# GitHub Pages 本地克隆（publish.sh 使用）
+_gh_pages/
+
+# 编辑器 / IDE
+.DS_Store
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+
+# 测试 / 覆盖率
+.pytest_cache/
+.coverage
+htmlcov/
