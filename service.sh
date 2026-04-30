@@ -62,6 +62,14 @@ is_running() {
   [[ -n "$(get_pid)" ]]
 }
 
+# 从进程命令行参数中读取实际监听端口
+get_running_port() {
+  local pid="$1"
+  ps -p "$pid" -o args= 2>/dev/null \
+    | grep -oE -- '--port [0-9]+' \
+    | awk '{print $2}'
+}
+
 ensure_dirs() {
   mkdir -p "$SCRIPT_DIR/logs" "$SCRIPT_DIR/reports"
 }
@@ -210,24 +218,22 @@ cmd_status() {
 
     # 进程信息
     if command -v ps &>/dev/null; then
-      local cpu mem
+      local cpu mem start_time
       cpu=$(ps -p "$pid" -o %cpu= 2>/dev/null | tr -d ' ' || echo "N/A")
       mem=$(ps -p "$pid" -o %mem= 2>/dev/null | tr -d ' ' || echo "N/A")
+      start_time=$(ps -p "$pid" -o lstart= 2>/dev/null | xargs || echo "N/A")
       echo -e "  CPU 占用: ${cpu}%"
       echo -e "  内存占用: ${mem}%"
-    fi
-
-    # 启动时间
-    if command -v ps &>/dev/null; then
-      local start_time
-      start_time=$(ps -p "$pid" -o lstart= 2>/dev/null | xargs || echo "N/A")
       echo -e "  启动时间: $start_time"
     fi
 
-    # HTTP 可达性
+    # HTTP 可达性（使用进程实际监听端口）
+    local port
+    port=$(get_running_port "$pid")
+    port="${port:-$DEFAULT_PORT}"
     if command -v curl &>/dev/null; then
-      if curl -sf "http://localhost:8000/" -o /dev/null 2>/dev/null; then
-        echo -e "  HTTP 状态: ${GREEN}可访问 http://localhost:8000${RESET}"
+      if curl -sf "http://localhost:${port}/" -o /dev/null 2>/dev/null; then
+        echo -e "  HTTP 状态: ${GREEN}可访问 http://localhost:${port}${RESET}"
       else
         echo -e "  HTTP 状态: ${YELLOW}进程运行但 HTTP 未就绪${RESET}"
       fi
