@@ -416,6 +416,73 @@ async function handleToolbarDelete() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   从 GitHub Pages 仓库同步文章到本地
+   ══════════════════════════════════════════════════════════ */
+
+async function syncFromGitHub() {
+  const syncBtn = document.getElementById("sync-btn");
+  const progress = document.getElementById("progress");
+  const progressFill = document.getElementById("progress-fill");
+  const progressStatus = document.getElementById("progress-status");
+
+  syncBtn.disabled = true;
+  progress.classList.remove("hidden");
+  progressFill.style.width = "10%";
+  progressStatus.textContent = "正在连接 GitHub...";
+
+  try {
+    const response = await fetch("/api/sync", { method: "POST" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        let event;
+        try {
+          event = JSON.parse(line.slice(6));
+        } catch {
+          continue;
+        }
+        if (event.status === "cloning") {
+          progressFill.style.width = "30%";
+          progressStatus.textContent = event.message || "克隆/拉取仓库...";
+        } else if (event.status === "syncing") {
+          progressFill.style.width = "70%";
+          progressStatus.textContent = event.message || "同步文章...";
+        } else if (event.status === "complete") {
+          progressFill.style.width = "100%";
+          progressStatus.textContent =
+            event.synced === 0
+              ? `同步完成，本地已是最新（跳过 ${event.skipped} 篇）。`
+              : `同步完成，新增 ${event.synced} 篇，跳过 ${event.skipped} 篇。`;
+          await loadReportList();
+        } else if (event.status === "error") {
+          throw new Error(event.message);
+        }
+      }
+    }
+  } catch (err) {
+    progressStatus.textContent = `同步失败: ${err.message}`;
+    progressFill.style.background = "#cf222e";
+  } finally {
+    syncBtn.disabled = false;
+    setTimeout(() => {
+      progress.classList.add("hidden");
+      progressFill.style.width = "0%";
+      progressFill.style.background = "";
+      progressStatus.innerHTML = "";
+    }, 5000);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
    发布到 GitHub Pages
    ══════════════════════════════════════════════════════════ */
 

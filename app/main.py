@@ -8,14 +8,15 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import report_store
-from app.config import get_settings_display, settings, update_settings
+from app import config as _config
+from app.config import get_settings_display, update_settings
 from app.fetchers.arxiv import ArxivFetcher
 from app.fetchers.finance_news import FinanceNewsFetcher
 from app.fetchers.github_trending import GitHubTrendingFetcher
 from app.fetchers.hacker_news import HackerNewsFetcher
 from app.fetchers.product_hunt import ProductHuntFetcher
 from app.models import SourceResult
-from app.publisher import _pages_url, publish_reports
+from app.publisher import _pages_url, publish_reports, sync_from_remote
 from app.summarizer import (
     generate_refine_stream,
     generate_report,
@@ -193,7 +194,7 @@ async def get_settings():
 
 @app.get("/api/pages-url")
 async def get_pages_url():
-    url = _pages_url(settings.github_pages_repo) if settings.github_pages_repo else ""
+    url = _pages_url(_config.settings.github_pages_repo) if _config.settings.github_pages_repo else ""
     return {"url": url}
 
 
@@ -206,12 +207,24 @@ async def put_settings(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/sync")
+async def sync():
+    async def event_stream():
+        async for event in sync_from_remote(
+            repo_url=_config.settings.github_pages_repo,
+            github_token=_config.settings.github_token,
+        ):
+            yield event
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
 @app.post("/api/publish")
 async def publish(force: bool = False):
     async def event_stream():
         async for event in publish_reports(
-            repo_url=settings.github_pages_repo,
-            github_token=settings.github_token,
+            repo_url=_config.settings.github_pages_repo,
+            github_token=_config.settings.github_token,
             force_all=force,
         ):
             yield event

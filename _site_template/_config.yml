@@ -27,7 +27,7 @@ toc: true
 theme_mode:
 
 # 头像（可选，留空不显示）
-avatar:
+avatar: "/assets/img/avatar.png"
 
 comments:
   provider:
