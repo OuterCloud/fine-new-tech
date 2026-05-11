@@ -306,7 +306,7 @@ def _render_config(content: str, repo_url: str, site_email: str = "") -> str:
     parts = url.split("/")
     if len(parts) == 2:
         user, repo = parts
-        site_url = f"https://{user}.github.io"
+        site_url = f"https://{user.lower()}.github.io"
         site_baseurl = f"/{repo}"
         github_username = user
         social_link = f"https://github.com/{user}"
