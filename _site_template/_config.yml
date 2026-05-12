@@ -38,7 +38,7 @@ analytics:
 
 paginate: 10
 
-permalink: /posts/:title/
+permalink: /:year/:month/:day/:slug/
 
 kramdown:
   footnote_backlink: "&#8617;&#xfe0e;"
@@ -64,7 +64,7 @@ defaults:
       layout: post
       comments: false
       toc: true
-      permalink: /posts/:title/
+      permalink: /:year/:month/:day/:slug/
   - scope:
       path: _drafts
     values:

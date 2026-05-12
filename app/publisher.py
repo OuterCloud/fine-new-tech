@@ -102,7 +102,7 @@ def _extract_body(path: Path) -> str:
 
 
 def _build_post(
-    src: Path, date_str: str, lang: str = "zh", is_research: bool = False
+    src: Path, date_str: str, lang: str = "zh", is_research: bool = False, slug: str = ""
 ) -> str:
     title = _extract_title(src)
     body = _extract_body(src)
@@ -115,9 +115,12 @@ def _build_post(
         categories = "  - Digest"
         tags = f"  - {lang}\n  - daily"
 
+    slug_line = f"slug: {slug}\n" if slug else ""
+
     return (
         f"---\n"
         f'title: "{title}"\n'
+        f"{slug_line}"
         f"date: {date_str} 09:00:00 +0800\n"
         f"categories:\n{categories}\n"
         f"tags:\n{tags}\n"
@@ -127,10 +130,10 @@ def _build_post(
 
 def _write_post_if_changed(
     src: Path, dest: Path, date_str: str, lang: str = "zh", is_research: bool = False,
-    force: bool = False,
+    force: bool = False, slug: str = "",
 ) -> bool:
     """写入 post 文件，内容未变则跳过。返回是否实际写入。"""
-    content = _build_post(src, date_str, lang, is_research)
+    content = _build_post(src, date_str, lang, is_research, slug)
     if not force and dest.exists() and dest.read_text(encoding="utf-8") == content:
         return False
     dest.write_text(content, encoding="utf-8")
@@ -236,10 +239,10 @@ async def publish_reports(
         changed = False
         if files["zh"]:
             dest = posts_dir / f"{date_str}-zh.md"
-            changed |= _write_post_if_changed(files["zh"], dest, date_str, "zh", force=force_all)
+            changed |= _write_post_if_changed(files["zh"], dest, date_str, "zh", force=force_all, slug="zh")
         if files["en"]:
             dest = posts_dir / f"{date_str}-en.md"
-            changed |= _write_post_if_changed(files["en"], dest, date_str, "en", force=force_all)
+            changed |= _write_post_if_changed(files["en"], dest, date_str, "en", force=force_all, slug="en")
         if changed:
             new_count += 1
 
@@ -262,7 +265,7 @@ async def publish_reports(
                     if old != new_dest:
                         old.unlink()
                 if _write_post_if_changed(
-                    src, new_dest, d_str, "zh", is_research=True, force=force_all
+                    src, new_dest, d_str, "zh", is_research=True, force=force_all, slug=src.stem
                 ):
                     new_count += 1
 
